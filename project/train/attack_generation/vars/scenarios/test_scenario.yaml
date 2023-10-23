@@ -1,0 +1,42 @@
+---
+
+TEST_SCENARIO:
+
+  - name: "DDOS"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "443"
+    ddos_type: "syn_flood"
+    #    ddos_pulse_sec: 2
+    playbook: yes
+    start_time:
+      dow: 2
+      hour: 16
+      minute: 03
+      second: 0
+    duration_sec: 40
+
+  - name: "DDOS syn pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "443"
+    ddos_type: "syn_flood"
+    ddos_pulse_sec: 0.2
+    playbook: yes
+    start_time:
+      dow: 2
+      hour: 16
+      minute: 03
+      second: 0
+    duration_sec: 60
+
+  - name: "DDOS icmp pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "443"
+    ddos_type: "icmp_flood"
+    #    ddos_pulse_sec: 0.2
+    playbook: yes
+    start_time:
+      dow: 2
+      hour: 16
+      minute: 03
+      second: 0
+    duration_sec: 30

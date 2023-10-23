@@ -1,0 +1,31 @@
+---
+- set_fact:
+    attack_duration_sec: "{{attack.duration_sec|default(300)}}"
+  run_once: true
+  delegate_to: localhost
+
+# count how many seconds wait before attack
+- name: get actual timestamp
+  shell:
+    cmd: date +%s
+  register: actual_timestamp
+  run_once: true
+  delegate_to: localhost
+
+- name: convert requested date to timestamp
+  shell:
+    cmd: date '+%s' --date="{{attack_day}} +{{attack.start_time.hour}} hours +{{attack.start_time.minute}} minutes +{{attack.start_time.second}} seconds"
+  register: execute_timestamp
+  run_once: true
+  delegate_to: localhost
+
+- name: shift by 7 days if execute_timestamp is lower than actual_timestamp
+  set_fact:
+    execute_timestamp: "{{execute_timestamp.stdout if execute_timestamp.stdout|int>actual_timestamp.stdout|int else execute_timestamp.stdout|int+3600*24*7}}"
+  run_once: true
+  delegate_to: localhost
+
+- shell:
+    cmd: echo "\"{{ '%c' | ansible.builtin.strftime(execute_timestamp) }}\",\"{{attack.name}}\",\"{{attack.cmd_template}} {{attack.ddos_type|default('')}}\",\"{{target_ip}}\",\"{{attack.target_ports}}\"" >> output/attack_plan   
+  run_once: true
+  delegate_to: localhost

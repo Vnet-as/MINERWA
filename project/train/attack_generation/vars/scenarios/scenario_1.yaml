@@ -1,0 +1,873 @@
+---
+
+SCENARIO_1:
+
+#   ____  _   _ _   _ ____    _ __   __           
+#  / ___|| | | | \ | |  _ \  / \\ \ / /           
+#  \___ \| | | |  \| | | | |/ _ \\ V /            
+#   ___) | |_| | |\  | |_| / ___ \| |             
+#  |____/ \___/|_| \_|____/_/   \_\_| 
+
+#   __  __  ___  _   _ ____    _ __   __
+#  |  \/  |/ _ \| \ | |  _ \  / \\ \ / /
+#  | |\/| | | | |  \| | | | |/ _ \\ V / 
+#  | |  | | |_| | |\  | |_| / ___ \| |  
+#  |_|  |_|\___/|_| \_|____/_/   \_\_|
+
+#   _____ _   _ _____ ____  ____    _ __   __
+#  |_   _| | | | ____/ ___||  _ \  / \\ \ / /
+#    | | | | | |  _| \___ \| | | |/ _ \\ V / 
+#    | | | |_| | |___ ___) | |_| / ___ \| |  
+#    |_|  \___/|_____|____/|____/_/   \_\_|  
+#                   
+  
+#  __        _______ ____  _   _ _____ ____  ____    _ __   __
+#  \ \      / / ____|  _ \| \ | | ____/ ___||  _ \  / \\ \ / /
+#   \ \ /\ / /|  _| | | | |  \| |  _| \___ \| | | |/ _ \\ V / 
+#    \ V  V / | |___| |_| | |\  | |___ ___) | |_| / ___ \| |  
+#     \_/\_/  |_____|____/|_| \_|_____|____/|____/_/   \_\_|  
+#
+
+#   _____ _   _ _   _ ____  ____  ____    _ __   __
+#  |_   _| | | | | | |  _ \/ ___||  _ \  / \\ \ / /
+#    | | | |_| | | | | |_) \___ \| | | |/ _ \\ V / 
+#    | | |  _  | |_| |  _ < ___) | |_| / ___ \| |  
+#    |_| |_| |_|\___/|_| \_\____/|____/_/   \_\_|  
+#
+  
+  - name: "1#ddos_udp_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "53"
+    ddos_type: "udp_flood"
+    playbook: yes
+    start_time:
+      dow: 4
+      hour: 15
+      minute: 45
+      second: 20
+    duration_sec: 200
+
+  - name: "2#ddos_udp_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "69"
+    ddos_type: "udp_flood"
+    playbook: yes
+    start_time:
+      dow: 4
+      hour: 15
+      minute: 50
+      second: 20
+    duration_sec: 400
+
+  - name: "3#ddos_syn_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "443"
+    ddos_type: "syn_flood"
+    playbook: yes
+    start_time:
+      dow: 4
+      hour: 16
+      minute: 03
+      second: 20
+    duration_sec: 400
+
+  - name: "4#ddos_icmp_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: ""
+    ddos_type: "icmp_flood"
+    ddos-pulse_sec: 1.0
+    playbook: yes
+    start_time:
+      dow: 4
+      hour: 16
+      minute: 52
+      second: 50
+    duration_sec: 600
+
+  - name: "5#xmas_scan-low_aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_tcp_xmas.attacks[1]}}"
+    target_ports: "10-1024"
+    start_time:
+      dow: 4
+      hour: 17
+      minute: 03
+      second: 3
+    duration_sec: 600
+
+  - name: "6#tcp_sequence_prediction"
+    cmd_template: "{{ATTACKS_POOL.tcp_sequence_prediction.attacks[0]}}"
+    target_ports: 22
+    start_time:
+      dow: 4
+      hour: 17
+      minute: 29
+      second: 12
+    duration_sec: 900
+
+  - name: "7#fin_scan-low_aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_tcp_fin.attacks[1]}}"
+    target_ports: "10-1024"
+    start_time:
+      dow: 4
+      hour: 17
+      minute: 50
+      second: 3
+    duration_sec: 900
+
+  - name: "8#ddos_syn_ack_fin_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "3306"
+    ddos_type: "syn_ack_fin_flood"
+    ddos-pulse_sec: 0.5
+    playbook: yes
+    start_time:
+      dow: 4
+      hour: 18
+      minute: 42
+      second: 20
+    duration_sec: 900
+
+  - name: "9#xmas_scan-high aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_tcp_xmas.attacks[3]}}"
+    target_ports: "10-1000"
+    start_time:
+      dow: 4
+      hour: 19
+      minute: 40
+      second: 36
+    duration_sec: 800
+
+  - name: "10#tcp_sequence_prediction"
+    cmd_template: "{{ATTACKS_POOL.tcp_sequence_prediction.attacks[0]}}"
+    target_ports: 22
+    start_time:
+      dow: 4
+      hour: 20
+      minute: 40
+      second: 22
+    duration_sec: 300
+
+  - name: "11#ddos_rst_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "443"
+    ddos_type: "rst_flood"
+    ddos-pulse_sec: 0.4
+    playbook: yes
+    start_time:
+      dow: 4
+      hour: 21
+      minute: 02
+      second: 55
+    duration_sec: 400
+
+  - name: "12#fin_scan-high_aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_tcp_fin.attacks[3]}}"
+    target_ports: "10-113"
+    start_time:
+      dow: 4
+      hour: 21
+      minute: 12
+      second: 3
+    duration_sec: 200
+
+  - name: "14#ddos_syn_ack_fin_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "80"
+    ddos_type: "syn_ack_fin_flood"
+    ddos-pulse_sec: 0.9
+    playbook: yes
+    start_time:
+      dow: 4
+      hour: 21
+      minute: 32
+      second: 20
+    duration_sec: 400
+
+  - name: "15#ddos_syn_ack_fin_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "21"
+    ddos_type: "syn_ack_fin_flood"
+    playbook: yes
+    start_time:
+      dow: 4
+      hour: 21
+      minute: 50
+      second: 20
+    duration_sec: 600
+
+  - name: "16#ddos_rst_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "123"
+    ddos_type: "rst_flood"
+    ddos-pulse_sec: 0.8
+    playbook: yes
+    start_time:
+      dow: 4
+      hour: 22
+      minute: 12
+      second: 55
+    duration_sec: 300
+
+  - name: "17#ddos_udp_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "69"
+    ddos-pulse_sec: 0.5
+    ddos_type: "udp_flood"
+    playbook: yes
+    start_time:
+      dow: 4
+      hour: 22
+      minute: 25
+      second: 20
+    duration_sec: 300
+
+  - name: "18#xmas_scan-high aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_tcp_xmas.attacks[3]}}"
+    target_ports: "10-65535"
+    start_time:
+      dow: 4
+      hour: 22
+      minute: 50
+      second: 36
+    duration_sec: 200
+
+  - name: "19#ddos_syn_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "23"
+    ddos_type: "syn_flood"
+    playbook: yes
+    start_time:
+      dow: 4
+      hour: 23
+      minute: 1
+      second: 10
+    duration_sec: 400
+
+  - name: "20#tcp_sequence_prediction"
+    cmd_template: "{{ATTACKS_POOL.tcp_sequence_prediction.attacks[0]}}"
+    target_ports: 22
+    start_time:
+      dow: 4
+      hour: 23
+      minute: 11
+      second: 2
+    duration_sec: 300
+
+  - name: "21#ddos_syn_ack_fin_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "21"
+    ddos_type: "syn_ack_fin_flood"
+    playbook: yes
+    start_time:
+      dow: 4
+      hour: 23
+      minute: 22
+      second: 20
+    duration_sec: 200
+ 
+  - name: "22#fin_scan-high_aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_tcp_fin.attacks[3]}}"
+    target_ports: "10-65535"
+    start_time:
+      dow: 4
+      hour: 23
+      minute: 40
+      second: 45
+    duration_sec: 300
+
+  - name: "23#ddos_no_l4_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: ""
+    ddos_type: "no_l4_flood" 
+    playbook: yes
+    start_time:
+      dow: 4
+      hour: 23
+      minute: 58
+      second: 50
+    duration_sec: 1200
+
+#   _____ ____  ___ ____    _ __   __
+#  |  ___|  _ \|_ _|  _ \  / \\ \ / /
+#  | |_  | |_) || || | | |/ _ \\ V / 
+#  |  _| |  _ < | || |_| / ___ \| |  
+#  |_|   |_| \_\___|____/_/   \_\_|  
+#
+  
+  - name: "24#ddos_udp_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "69"
+    ddos_type: "udp_flood"
+    playbook: yes
+    start_time:
+      dow: 5
+      hour: 0
+      minute: 05
+      second: 20
+    duration_sec: 1000
+
+  - name: "25#ddos_udp_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "69"
+    ddos-pulse_sec: 0.3
+    ddos_type: "udp_flood"
+    playbook: yes
+    start_time:
+      dow: 5
+      hour: 0
+      minute: 35
+      second: 20
+    duration_sec: 1000
+  
+  - name: "26#ddos_no_l4_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: ""
+    ddos_type: "no_l4_flood" 
+    playbook: yes
+    start_time:
+      dow: 5
+      hour: 1
+      minute: 20
+      second: 50
+    duration_sec: 1000
+ 
+  - name: "27#ddos_no_l4_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: ""
+    ddos_type: "no_l4_flood" 
+    playbook: yes
+    start_time:
+      dow: 5
+      hour: 1
+      minute: 50
+      second: 50
+    duration_sec: 1000
+ 
+  - name: "28#ddos_no_l4_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: ""
+    ddos_type: "no_l4_flood" 
+    playbook: yes
+    ddos-pulse_sec: 0.2
+    start_time:
+      dow: 5
+      hour: 1
+      minute: 50
+      second: 50
+    duration_sec: 1000
+
+  - name: "29#ddos_icmp_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: ""
+    ddos_type: "icmp_flood"
+    playbook: yes
+    start_time:
+      dow: 5
+      hour: 3
+      minute: 56
+      second: 20
+    duration_sec: 400
+
+  - name: "30#ddos_icmp_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: ""
+    ddos_type: "icmp_flood"
+    ddos-pulse_sec: 0.2
+    playbook: yes
+    start_time:
+      dow: 5
+      hour: 4
+      minute: 26
+      second: 50
+    duration_sec: 700
+
+  - name: "31#syn_scan-advanced_low_aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_tcp_syn_advanced_scans.attacks[0]}}"
+    target_ports: "10-1024"
+    start_time:
+      dow: 5
+      hour: 6
+      minute: 36
+      second: 1
+    duration_sec: 750
+
+  - name: "32#ddos_icmp_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: ""
+    ddos_type: "icmp_flood"
+    playbook: yes
+    start_time:
+      dow: 5
+      hour: 7
+      minute: 56
+      second: 20
+    duration_sec: 900
+
+  - name: "33#xmas_scan-advanced_low_aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_tcp_xmas_advanced_scans.attacks[0]}}"
+    target_ports: "10-1024"
+    start_time:
+      dow: 5
+      hour: 8
+      minute: 17
+      second: 0
+    duration_sec: 1200
+
+  - name: "34#syn_flood"
+    cmd_template: "{{ATTACKS_POOL.dos_syn_flood.attacks[0]}}"
+    target_ports: "80,443"
+    start_time:
+      dow: 5
+      hour: 8
+      minute: 52
+      second: 50
+    duration_sec: 1500
+  
+  - name: "35#vuln_os_scan"
+    cmd_template: "{{ATTACKS_POOL.scan_vuln.attacks[0]}}"
+    target_ports: "1-1024"
+    start_time:
+      dow: 5
+      hour: 9
+      minute: 32
+      second: 10
+    duration_sec: 1200
+  
+  - name: "36#ddos_syn_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "443"
+    ddos_type: "syn_flood"
+    ddos-pulse_sec: 0.3
+    playbook: yes
+    start_time:
+      dow: 5
+      hour: 12
+      minute: 18
+      second: 50
+    duration_sec: 800
+
+  - name: "37#ddos_icmp_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: ""
+    ddos_type: "icmp_flood"
+    ddos-pulse_sec: 0.8
+    playbook: yes
+    start_time:
+      dow: 5
+      hour: 12
+      minute: 42
+      second: 50
+    duration_sec: 300
+
+  - name: "38#xmas_scan-medium aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_tcp_xmas_advanced_scans.attacks[2]}}"
+    target_ports: "10-139"
+    start_time:
+      dow: 5
+      hour: 13
+      minute: 10
+      second: 0
+    duration_sec: 2400
+
+  - name: "40#syn_flood"
+    cmd_template: "{{ATTACKS_POOL.dos_syn_flood.attacks[0]}}"
+    target_ports: "80,443"
+    start_time:
+      dow: 5
+      hour: 15
+      minute: 20
+      second: 2
+    duration_sec: 900
+  
+  - name: "41#tcp_sequence_prediction"
+    cmd_template: "{{ATTACKS_POOL.tcp_sequence_prediction.attacks[0]}}"
+    target_ports: 443,8080
+    start_time:
+      dow: 5
+      hour: 15
+      minute: 55
+      second: 0
+    duration_sec: 600
+  
+  - name: "42#fin_scan-low_aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_tcp_fin_advanced_scans.attacks[0]}}"
+    target_ports: "500-1024"
+    start_time:
+      dow: 5
+      hour: 16
+      minute: 25
+      second: 0
+    duration_sec: 1000
+  
+  - name: "43#ddos_rst_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "443"
+    ddos_type: "rst_flood"
+    playbook: yes
+    start_time:
+      dow: 5
+      hour: 18
+      minute: 43
+      second: 20
+    duration_sec: 800
+  
+  - name: "44#syn_scan-advanced_high aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_tcp_syn_advanced_scans.attacks[3]}}"
+    target_ports: "1000-65535"
+    start_time:
+      dow: 5
+      hour: 20
+      minute: 5
+      second: 42
+    duration_sec: 1200
+
+  - name: "45#ddos_syn_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "80"
+    ddos_type: "syn_flood"
+    ddos-pulse_sec: 0.6
+    playbook: yes
+    start_time:
+      dow: 5
+      hour: 21
+      minute: 00
+      second: 50
+    duration_sec: 1000
+
+  - name: "46#xmas_scan-advanced_high_aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_tcp_xmas_advanced_scans.attacks[3]}}"
+    target_ports: "10-65535"
+    start_time:
+      dow: 5
+      hour: 22
+      minute: 0
+      second: 0
+    duration_sec: 1500
+
+  - name: "47#ddos_rst_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "443"
+    ddos_type: "rst_flood"
+    playbook: yes
+    start_time:
+      dow: 5
+      hour: 22
+      minute: 39
+      second: 40
+    duration_sec: 700
+ 
+  - name: "48#syn_flood"
+    cmd_template: "{{ATTACKS_POOL.dos_syn_flood.attacks[0]}}"
+    target_ports: "80,443"
+    start_time:
+      dow: 5
+      hour: 23
+      minute: 0
+      second: 50
+    duration_sec: 1200
+  
+  - name: "49#tcp_sequence_prediction"
+    cmd_template: "{{ATTACKS_POOL.tcp_sequence_prediction.attacks[0]}}"
+    target_ports: 443,8080
+    start_time:
+      dow: 5
+      hour: 23
+      minute: 34
+      second: 54
+    duration_sec: 300
+  
+  - name: "50#fin_scan-high_aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_tcp_fin_advanced_scans.attacks[3]}}"
+    target_ports: "10-65535"
+    start_time:
+      dow: 5
+      hour: 23
+      minute: 55
+      second: 0
+    duration_sec: 2400
+
+#
+#   ____    _  _____ _   _ ____  ____    _ __   __
+#  / ___|  / \|_   _| | | |  _ \|  _ \  / \\ \ / /
+#  \___ \ / _ \ | | | | | | |_) | | | |/ _ \\ V / 
+#   ___) / ___ \| | | |_| |  _ <| |_| / ___ \| |  
+#  |____/_/   \_\_|  \___/|_| \_\____/_/   \_\_|  
+#
+   
+  - name: "51#ddos_udp_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "53"
+    ddos-pulse_sec: 0.6
+    ddos_type: "udp_flood"
+    playbook: yes
+    start_time:
+      dow: 6
+      hour: 0
+      minute: 15
+      second: 20
+    duration_sec: 1000
+
+  - name: "52#ddos_no_l4_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: ""
+    ddos_type: "no_l4_flood" 
+    playbook: yes
+    ddos-pulse_sec: 0.6
+    start_time:
+      dow: 6
+      hour: 1
+      minute: 12
+      second: 50
+    duration_sec: 800
+
+  - name: "53#ddos_syn_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "23"
+    ddos_type: "syn_flood"
+    playbook: yes
+    start_time:
+      dow: 6
+      hour: 5
+      minute: 21
+      second: 50
+    duration_sec: 800
+
+  - name: "54#udp_scan-low_aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_udp.attacks[0]}}"
+    target_ports: "1-65535"
+    start_time:
+      dow: 6
+      hour: 7
+      minute: 3
+      second: 0
+    duration_sec: 2400
+
+  - name: "55#vuln_os_scan"
+    cmd_template: "{{ATTACKS_POOL.scan_vuln.attacks[0]}}"
+    target_ports: "1-1024"
+    start_time:
+      dow: 6
+      hour: 8
+      minute: 45
+      second: 34
+    duration_sec: 300
+    
+  - name: "56#ddos_syn_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "443"
+    playbook: yes
+    start_time:
+      dow: 6
+      hour: 9
+      minute: 30
+      second: 50
+    duration_sec: 200
+    
+  - name: "57#ssh_bruteforce"
+    cmd_template: "{{ATTACKS_POOL.bruteforce_ssh_login.attacks[0]}}"
+    target_ports: "N/A"
+    start_time:
+      dow: 6
+      hour: 10
+      minute: 55
+      second: 20
+    duration_sec: 3000
+
+  - name: "58#url_enumeration-medium aggresivity"
+    cmd_template: "{{ATTACKS_POOL.enumeration_dir_http.attacks[1]}}"
+    target_ports: "N/A"
+    start_time:
+      dow: 6
+      hour: 13
+      minute: 42
+      second: 0
+    duration_sec: 180
+  
+  - name: "59#ddos_no_l4_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: ""
+    ddos_type: "no_l4_flood" 
+    playbook: yes
+    ddos-pulse_sec: 0.9
+    start_time:
+      dow: 6
+      hour: 14
+      minute: 00
+      second: 05
+    duration_sec: 900
+
+  - name: "60#ddos_icmp_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: ""
+    ddos_type: "icmp_flood"
+    playbook: yes
+    start_time:
+      dow: 6
+      hour: 14
+      minute: 36
+      second: 20
+    duration_sec: 500
+
+  - name: "61#vuln_os_scan"
+    cmd_template: "{{ATTACKS_POOL.scan_vuln.attacks[0]}}"
+    target_ports: "1025-5000"
+    start_time:
+      dow: 6
+      hour: 15
+      minute: 25
+      second: 10
+      duration_sec: 600
+    
+  - name: "62#ddos_syn_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "80,443,8080"
+    playbook: yes
+    start_time:
+      dow: 6
+      hour: 16
+      minute: 6
+      second: 20
+    duration_sec: 120
+    
+  - name: "63#http_bruteforce"
+    cmd_template: "{{ATTACKS_POOL.bruteforce_wordpress_login.attacks[0]}}"
+    target_ports: "N/A"
+    start_time:
+      dow: 6
+      hour: 16
+      minute: 36
+      second: 10
+    duration_sec: 1200
+
+  - name: "64#url_enumeration-medium aggresivity"
+    cmd_template: "{{ATTACKS_POOL.enumeration_dir_http.attacks[1]}}"
+    target_ports: "N/A"
+    start_time:
+      dow: 6
+      hour: 17
+      minute: 22
+      second: 0
+    duration_sec: 120
+  
+  - name: "65#ddos_syn_ack_fin_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "443"
+    ddos_type: "syn_ack_fin_flood"
+    ddos-pulse_sec: 0.4
+    playbook: yes
+    start_time:
+      dow: 6
+      hour: 18
+      minute: 22
+      second: 20
+    duration_sec: 600
+
+  - name: "66#ddos_rst_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "80"
+    ddos_type: "rst_flood"
+    playbook: yes
+    start_time:
+      dow: 6
+      hour: 19
+      minute: 13
+      second: 20
+    duration_sec: 500
+
+  - name: "67#ddos_rst_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "80"
+    ddos_type: "rst_flood"
+    ddos-pulse_sec: 1.0
+    playbook: yes
+    start_time:
+      dow: 6
+      hour: 19
+      minute: 43
+      second: 03
+    duration_sec: 800
+
+  - name: "68#vuln_os_scan"
+    cmd_template: "{{ATTACKS_POOL.scan_vuln.attacks[0]}}"
+    target_ports: "5000-169"
+    start_time:
+      dow: 6
+      hour: 20
+      minute: 0
+      second: 30
+    duration_sec: 1300
+    
+  - name: "70#ddos_syn_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "80,443,8080,22"
+    playbook: yes
+    start_time:
+      dow: 6
+      hour: 20
+      minute: 55
+      second: 20
+    duration_sec: 300
+
+  - name: "71#udp_scan-high aggresivity"
+    cmd_template: "{{ATTACKS_POOL.scan_udp.attacks[3]}}"
+    target_ports: "1-65535"
+    start_time:
+      dow: 6
+      hour: 21
+      minute: 3
+      second: 0
+    duration_sec: 2400
+
+  - name: "72#ddos_syn_ack_fin_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "443"
+    ddos_type: "syn_ack_fin_flood"
+    playbook: yes
+    start_time:
+      dow: 6
+      hour: 21
+      minute: 42
+      second: 20
+    duration_sec: 900
+    
+  - name: "73#http_bruteforce"
+    cmd_template: "{{ATTACKS_POOL.bruteforce_wordpress_login.attacks[0]}}"
+    target_ports: "80,443"
+    start_time:
+      dow: 6
+      hour: 22
+      minute: 10
+      second: 03
+    duration_sec: 3300 
+
+  - name: "74#ddos_syn_flood"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "23"
+    ddos_type: "syn_flood"
+    playbook: yes
+    start_time:
+      dow: 6
+      hour: 23
+      minute: 10
+      second: 50
+    duration_sec: 1000
+
+  - name: "75#ddos_syn_flood-pulse"
+    cmd_template: "{{ATTACKS_POOL.ddos_attack.playbook}}"
+    target_ports: "443"
+    ddos_type: "syn_flood"
+    ddos-pulse_sec: 0.3
+    playbook: yes
+    start_time:
+      dow: 6
+      hour: 23
+      minute: 45
+      second: 2
+    duration_sec: 1000
+
+#   ____  _   _ _   _ ____    _ __   __           
+#  / ___|| | | | \ | |  _ \  / \\ \ / /           
+#  \___ \| | | |  \| | | | |/ _ \\ V /            
+#   ___) | |_| | |\  | |_| / ___ \| |             
+#  |____/ \___/|_| \_|____/_/   \_\_| 
+#

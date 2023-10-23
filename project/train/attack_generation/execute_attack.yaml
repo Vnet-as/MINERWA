@@ -1,0 +1,109 @@
+---
+
+- name: prepare variables for attack and wait until scheduled time
+  block:
+    - set_fact:
+        attack_duration_sec: "{{attack.duration_sec|default(300)}}"
+
+    # count how many seconds wait before attack
+    - name: get actual timestamp
+      shell:
+        cmd: date +%s
+      register: actual_timestamp
+
+    - name: convert requested date to timestamp
+      shell:
+        cmd: date +%s --date="{{attack_day}} +{{attack.start_time.hour}} hours +{{attack.start_time.minute}} minutes +{{attack.start_time.second}} seconds"
+      register: execute_timestamp
+
+    - name: shift by 7 days if execute_timestamp is lower than actual_timestamp
+      set_fact:
+        execute_timestamp: "{{execute_timestamp.stdout 
+          if execute_timestamp.stdout|int>(actual_timestamp.stdout|int-3600*2)
+          else execute_timestamp.stdout|int+3600*24*7}}"
+
+    - name: calculate how many seconds to wait
+      set_fact:
+        attack_wait_sec: "{{execute_timestamp|int-actual_timestamp.stdout|int}}"
+
+    - name: create command from command template provided by attack.cmd_template 
+      set_fact:
+        attack_command: "{{ attack.cmd_template|replace('$T_ADDR', target_ip )|replace('$T_PORTS', attack.target_ports) if not attack.playbook is defined else attack.cmd_template }}"
+      run_once: true
+      delegate_to: localhost
+
+    - name: mark down attacking hosts
+      set_fact: 
+      # TODO if playbook or not
+        selected_attackers: >-
+          "{{
+            ansible_play_hosts |
+            map('extract', hostvars) | list | random | json_query('ansible_host')
+          }}"
+      when: not attack.playbook is defined   
+ 
+    - name: mark down attacking hosts
+      set_fact: 
+      # TODO if playbook or not
+        selected_attackers: >-
+          "{{
+            ansible_play_hosts | map('extract', hostvars) | list | map(attribute='ansible_host') | list | join(',') | replace('"', '')
+          }}"
+      when: attack.playbook is defined   
+    
+    # wait until given attack time
+    - pause:
+        prompt:  "{{attack_sequence_num}}/{{attacks_num}} [{{attack_duration_sec}} sec] Next attack {{attack.name}} will be executed at {{ '%c' | ansible.builtin.strftime(actual_timestamp.stdout|int+attack_wait_sec|int) }}"
+        seconds: "{{ attack_wait_sec }}"
+
+  run_once: true
+  delegate_to: localhost
+
+# mark attack start timestamp 
+- name: mark down aproximate time of attack start
+  set_fact:
+    attack_start_timestamp: "{{ lookup('pipe', 'date +%s') }}"
+  run_once: true
+  delegate_to: localhost
+  
+# execute attack from cmdline
+- name: "{{attack_sequence_num}}/{{attacks_num}} [{{attack_duration_sec}} sec]: {{attack_command}}"
+  shell:
+    cmd: "{{attack_command}}"
+  register: attack_out
+  async: "{{attack_duration_sec}}"
+  poll: "{{((attack_duration_sec|int)/10+1)|round|int}}"
+  become: yes
+  remote_user: minerwa
+  when: not attack.playbook is defined
+  failed_when:
+    - attack_out.msg | default('') is not match("async task did not complete within the requested time.*")
+    - attack_out.rc | default('0') != 0
+  delegate_to: "{{selected_attackers.strip('\"')}}" 
+  run_once: true
+  delegate_facts: true
+
+# execute attack from playbook
+- name: "{{attack_sequence_num}}/{{attacks_num}} [{{attack_duration_sec}} sec]: {{attack_command}}"
+  include_tasks: ddos_attack.yaml
+  vars:
+      ddos_duration_sec: "{{attack_duration_sec}}"
+      ddos_target_ip: "{{target_ip}}"
+      ddos_target_ports: "{{attack.target_ports}}"
+      ddos_type: "{{attack.ddos_type}}"
+      ddos_pulse_sec: "{{attack.ddos_pulse_sec|default(0)}}"
+  when: attack.playbook is defined
+
+# mark attack finish timestamp 
+- name: mark down aproximate time of attack end
+  set_fact:
+    attack_end_timestamp: "{{ lookup('pipe', 'date +%s') }}"
+  run_once: true
+  delegate_to: localhost
+
+# add attack record to record file
+- name: add attack record to record file
+  shell: 
+    cmd: echo "\" {{attack.name}} {{attack.ddos_type|default("")}}\",\"{{attack_command}}\",\" [{{selected_attackers}}] \", \" [{{target_ip}}] \", \"[{{attack.target_ports}}] \",\" {{attack_start_timestamp}}\",\"{{attack_end_timestamp}}\"" >> {{report_file}}
+  run_once: true
+  delegate_to: localhost

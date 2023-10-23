@@ -1,0 +1,92 @@
+---
+- name: Execute one of configured attacks
+  hosts: attackers
+  vars_files:
+    - "./vars/attacks/attacks_pool.yaml"
+    - "./vars/scenarios/test_scenario.yaml"
+    - "./vars/scenarios/scenario_1.yaml"
+  gather_facts: yes
+  vars:
+    - REPORT_FILE_PATH: './output/attack_records'
+    - DOW_STRING:
+      - "Monday"
+      - "Tuesday"
+      - "Wednesday"
+      - "Thursday"
+      - "Friday"
+      - "Saturday" 
+      - "Sunday"
+    - T_ADDR: "{{ hostvars['victim'].ansible_host }}"
+    - ATTACK_SCENARIO: "{{ TEST_SCENARIO }}"
+
+  user: root
+  tasks:
+ 
+    # add execution sequence (exec_seq) to scenarios
+    - name: "determine sequential order of attacks"
+      block:
+
+          # get auxiliary actual timestamp needed for seqencing attacks
+        - shell:
+              cmd: date +%u%H%M%S
+          register: curr_exec_seq
+
+        - set_fact:
+                ATTACK_SCENARIO_SEQ: "{{ ATTACK_SCENARIO_SEQ | default([]) + [{ 
+                                'cmd_template': item.cmd_template,
+                                'duration_sec': item.duration_sec,
+                                'name': item.name,
+                                'playbook': item.playbook,
+                                'start_time': {
+                                    'dow': item.start_time.dow,
+                                    'hour': item.start_time.hour,
+                                    'minute': item.start_time.minute,
+                                    'second': item.start_time.second
+                                },
+                                'target_ports': item.target_ports,
+                                'ddos_type': item.ddos_type | default(None),
+                                'ddos_pulse_sec': item.ddos_pulse_sec | default(None),
+                                'exec_seq': item.start_time.dow*1000000
+                                           +item.start_time.hour*10000
+                                           +item.start_time.minute*100
+                                           +item.start_time.second
+                        }] 
+                }}"
+          loop: "{{ ATTACK_SCENARIO }}"
+
+        - set_fact:
+            ATTACK_SCENARIO_SEQ: "{{
+                ATTACK_SCENARIO |
+                rejectattr('name', 'equalto', item['name']) | list +
+                [ item | ansible.builtin.combine({ 'exec_seq': item.exec_seq+7000000 if item.exec_seq-30<curr_exec_seq.stdout|int else item.exec_seq }) ]
+              }}" # - 30 sec <- time buffer for pre exec tasks
+              # if exec time is before shift sequential num by 7 "days" else keep seq num
+          loop: "{{ ATTACK_SCENARIO_SEQ }}"
+
+      delegate_to: localhost
+      run_once: yes
+
+    - name: Output schedule before attacking
+      include_tasks: print_schedule.yaml
+      vars:
+        attack: "{{item}}"
+        attack_day: "{{DOW_STRING[item.start_time.dow-1]}}"
+        target_ip: "{{T_ADDR}}"
+        report_file: "{{REPORT_FILE_PATH}}"
+        attack_sequence_num: "{{idx+1}}"
+        attacks_num: "{{ATTACK_SCENARIO | length }}"
+      loop: "{{ ATTACK_SCENARIO_SEQ | sort(attribute='exec_seq') }}"
+
+    - name: Execute attacks according to ATTACK_SCENARIO
+      include_tasks: execute_attack.yaml
+      vars:
+        attack: "{{item}}"
+        attack_day: "{{DOW_STRING[item.start_time.dow-1]}}"
+        target_ip: "{{T_ADDR}}"
+        report_file: "{{REPORT_FILE_PATH}}"
+        attack_sequence_num: "{{idx+1}}"
+        attacks_num: "{{ATTACK_SCENARIO | length }}"
+      loop: "{{ ATTACK_SCENARIO_SEQ | sort(attribute='exec_seq') }}"
+      loop_control:
+        index_var: idx
+

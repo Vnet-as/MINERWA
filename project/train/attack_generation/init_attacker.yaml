@@ -1,0 +1,50 @@
+--- 
+- name: Update attacking hosts
+  hosts: attackers
+  become: true
+  tasks:
+
+    # add nameservers 1.1.1.1 and 8.8.8.8
+    - name: ensure valid nameservers are present
+      lineinfile:
+        path: '/etc/resolv.conf'
+        line: "nameserver {{item}}"
+      with_items:
+        - '8.8.8.8'
+        - '1.1.1.1'
+
+    # resolve hostname fast - faster priviledge escalation
+    - name: ensure hostname is translatable
+      lineinfile:
+        path: '/etc/hosts'
+        line: "127.0.0.1 {{ ansible_hostname }}"
+
+    # nainstaluj potrebne balicky pre utoky
+    - name: ensure tools for attack are installed
+      apt:
+        name: "{{item}}"
+        update_cache: yes
+        state: latest
+      with_items:
+        - hping3
+        - nmap
+        - hydra
+        - gobuster
+
+    # add password dictionary for some bruteforce attacks
+    - name: add passwd dictionaries
+      copy:
+        src: 'files/passwords.txt'
+        dest: /var/passwords.txt
+        owner: root
+        group: root
+        mode: u=r,g=r,o=r
+ 
+    # add username dictionary for some bruteforce attacks
+    - name: add user dictionaries
+      copy:
+        src: 'files/usernames.txt'
+        dest: /var/usernames.txt
+        owner: root
+        group: root
+        mode: u=r,g=r,o=r

