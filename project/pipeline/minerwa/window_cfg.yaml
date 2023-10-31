@@ -1,0 +1,8 @@
+window_size: 2
+windower_params:
+  win_min_entries: 2
+  win_min_cnt: 5
+  win_timeout: 700
+  flow_winspan_max_len: 2000
+  samples_cnt: 30
+  win_max_cnt: 200

@@ -1,0 +1,39 @@
+[
+    {
+        "feature_sets": [
+            "all",
+            ["num_bytes_per_hour"],
+            ["num_bytes_per_hour", "in_out_bytes_ratio"],
+            ["port_probability"],
+            ["port_probability", "port_entropy"],
+            ["port_probability", "num_unique_tuples"],
+            ["port_probability", "port_entropy", "num_unique_tuples"]
+        ],
+        "feature_sets_and_scalers": [
+            {"all": "sklearn.preprocessing.MinMaxScaler"},
+            {"all": "sklearn.preprocessing.QuantileTransformer"},
+            {
+                "num_unique_tuples": "sklearn.preprocessing.QuantileTransformer",
+                "all": "sklearn.preprocessing.MinMaxScaler"
+            },
+            {
+                "num_bytes_per_hour": "sklearn.preprocessing.QuantileTransformer",
+                "num_unique_tuples": "sklearn.preprocessing.QuantileTransformer",
+                "all": "sklearn.preprocessing.MinMaxScaler"
+            },
+            {
+                "num_bytes_per_hour": "sklearn.preprocessing.QuantileTransformer",
+                "in_out_bytes_ratio": "sklearn.preprocessing.QuantileTransformer",
+                "num_unique_tuples": "sklearn.preprocessing.QuantileTransformer",
+                "all": "sklearn.preprocessing.MinMaxScaler"
+            }
+        ],
+        "feature_scaler__n_quantiles": [1000],
+        "feature_scaler__output_distribution": ["uniform"],
+        "clustering_method": ["sklearn.cluster.DBSCAN"],
+        "clustering_method__eps": [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.4, 0.8, 1.5, 2.0, 5.0, 10.0],
+        "clustering_method__min_samples": [2, 3, 4, 5, 7, 10, 20, 40],
+        "clustering_method__p": [1, 2],
+        "random_state": [42, 142, 342]
+    }
+]

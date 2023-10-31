@@ -1,0 +1,2 @@
+# Convert lines of .sh files to LF
+*.sh text eol=lf

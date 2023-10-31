@@ -1,0 +1,30 @@
+main:
+  # Data paths
+  #path_train: "/data/kinit/subset_new/exps/traino/smallsplit"
+  #path_test: "/data/kinit/subset_new/exps/testo/smallsplit"
+  #path_valid: "/data/kinit/subset_new/exps/validato/smallsplit"
+  path_train: "/data/kinit/bigsubset/sc1_train"
+  path_test: "/data/kinit/bigsubset/sc1_test"
+  path_valid: "/data/kinit/bigsubset/sc1_validation"
+
+  # General settings
+  use_cuda: True
+  save_model: True
+  save_stats: True
+  saved_modelname: 'model.bin'
+  saved_resultsname: 'model_results.csv'
+  saved_statsname: 'model_stats.csv'
+
+dataset:
+  min_batch_size: 768
+  shuffle : True
+
+model:
+  early_stopping:
+    use: True
+    patience: 5
+    min_delta: 0
+  print_info: True
+  epochs: 30
+  lr: 2.0e-4
+  threshold : 1.0
