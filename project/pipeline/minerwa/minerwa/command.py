@@ -34,7 +34,7 @@ class GenerateCapnprotoCommand(CommandBase):
     def setup_cli_subparser(cls, subparser: argparse.ArgumentParser) -> None:
         subparser.add_argument('--schema-output', metavar='FILE',
                                required=True,
-                               help='output file for generated schema')
+                               help='output file for generated schema (- for stdout)')
 
     def run(self) -> None:
         from minerwa.utils.schema import generate_capnproto_schema
@@ -49,7 +49,7 @@ class GenerateClickhouseDDL(CommandBase):
     def setup_cli_subparser(cls, subparser: argparse.ArgumentParser) -> None:
         subparser.add_argument('--sql-output', metavar='FILE',
                                required=True,
-                               help='output DDL SQL file ')
+                               help='output DDL SQL file (- for stdout)')
 
     def run(self) -> None:
         from minerwa.utils.clickhouse import generate_tables_ddl

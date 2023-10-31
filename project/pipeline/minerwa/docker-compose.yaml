@@ -1,11 +1,10 @@
+version: '3'
 services:
   ingestor:
     build: .
     volumes:
       - ./minerwa:/tmp/minerwa/minerwa:ro
       - ./config.conf:/etc/minerwa/minerwa.conf:ro
-    extra_hosts:
-      - "host.docker.internal:172.17.0.1"
     command: ingestor
     depends_on:
       - nats

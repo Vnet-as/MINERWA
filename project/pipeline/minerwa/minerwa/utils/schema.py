@@ -1,4 +1,5 @@
 import random
+import sys
 
 from minerwa.helpers import flow_definition
 from minerwa.model import camel_case
@@ -30,5 +31,8 @@ def generate_capnproto_schema(definition_path: str, schema_path: str) -> None:
     schema_end = "\n}"
     schema = schema_start + schema_body + schema_end
 
+    if schema_path == '-':
+        sys.stdout.write(schema)
+        return
     with open(schema_path, 'w') as f:
         f.write(schema)

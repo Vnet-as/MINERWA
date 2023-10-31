@@ -1,3 +1,4 @@
+import sys
 import textwrap
 
 from minerwa.helpers import flow_definition
@@ -68,5 +69,8 @@ def generate_tables_ddl(definiton_path: str, sql_path: str) -> None:
     flow_table = _generate_flow_table(definition)
     materialized_view = _generate_materialized_view()
     ddl = '\n'.join((ingestion_table, flow_table, materialized_view))
+    if sql_path == '-':
+        sys.stdout.write(ddl)
+        return
     with open(sql_path, 'w') as f:
         f.write(ddl)
