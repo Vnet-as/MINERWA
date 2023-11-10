@@ -1,8 +1,9 @@
 import asyncio
 import functools
-from multiprocessing import Pool, Process, Queue
-import os
+from multiprocessing import Process, Queue
+from pathlib import Path
 import pickle
+from typing import Optional
 
 import filelock
 import numpy as np
@@ -14,7 +15,6 @@ from petastorm.etl.dataset_metadata import materialize_dataset
 from petastorm.pytorch import DataLoader
 from petastorm.unischema import Unischema, UnischemaField, dict_to_spark_row
 from pyspark.ml.feature import VectorAssembler
-import pyspark.pandas as ps
 import pyspark.sql.types
 from pyspark.sql.types import StructType, StringType
 import torch
@@ -22,15 +22,14 @@ import yaml
 import zmq
 
 from vnet_nanodec.anomaly_detection.preprocessing import (
-    data_preparer,
     scaler,
     vnet_feature_extraction,
     vnet_preprocessing
 )
-from vnet_nanodec.anomaly_detection.preprocessing.windowing.flow_processor_multiproc import process_flows
+from vnet_nanodec.anomaly_detection.preprocessing.windowing.flow_processor_multiproc import process_flows as process_flows_multiproc
+from vnet_nanodec.anomaly_detection.preprocessing.windowing.flow_processor import process_flows
 from vnet_nanodec.defines import FEATURES_CASTDICT
 from vnet_nanodec_gee import config
-from vnet_nanodec_gee.build_model_input_vnet import clip_data_to_0_1, row_generator
 from vnet_nanodec_gee.evaluate_vae import calc_recon_loss
 from vnet_nanodec_gee.ml.vae import VAE
 from vnet_nanodec_gee.utils import get_uri, init_local_spark
@@ -39,7 +38,31 @@ from minerwa.model import FlowBase
 from .base import DetectorBase
 
 
+def singleton_run(fn):
+    running = False
+    @functools.wraps(fn)
+    async def wrapper(*args, **kwargs):
+        nonlocal running
+        if not running:
+            running = True
+            await fn(*args, **kwargs)
+            running = False
+    return wrapper
+
+
+def row_generator(x):
+    flow_id, feature, label, src_ip, dst_ip = x
+    return {
+        'flow_id': flow_id,
+        'feature': np.expand_dims(np.array(feature, dtype=np.float32), axis=0),
+        'label': label,
+        'src_ip': src_ip,
+        'dst_ip': dst_ip,
+    }
+
+
 COLUMNS = (
+    'FLOW_ID',
     'IN_BYTES',
     'IN_PKTS',
     'PROTOCOL',
@@ -103,6 +126,8 @@ COLUMNS = (
     'DST_DENY',
 )
 
+config.VNET_COLUMNS.insert(0, config._Column('FLOW_ID', 'StringType', 'other', False))
+
 FEATURE_NAMES = [
     column.name for column in config.VNET_COLUMNS
     if column.column_type.startswith('feature_')
@@ -114,6 +139,7 @@ LOCK = filelock.FileLock('/var/lock/minerwa_ai.lock')
 class AIDetector(DetectorBase):
 
     role: str = ''
+    _cache_timeout: bool = True
 
     CFG_OPTS = (
         cfg.IntOpt('window_size', default=2),
@@ -122,14 +148,23 @@ class AIDetector(DetectorBase):
         cfg.IntOpt('win_max_cnt', default=200),
         cfg.IntOpt('win_timeout', default=700),
         cfg.IntOpt('flow_winspan_max_len', default=2000),
+        cfg.IntOpt('flow_cache_size', default=5000),
         cfg.IntOpt('samples_cnt', default=30),
         cfg.IntOpt('spark_memory', default=50),
-        cfg.StrOpt('spark_temp', default='/tmp/spark'),
-        cfg.StrOpt('filter_model_path', default='/etc/minerwa/filter_model.pkl')
+        cfg.IntOpt('parallel_jobs', default=1),
+        cfg.StrOpt('temp_dir', default='/tmp'),
+        cfg.StrOpt('scaling_config_path', default='/etc/minerwa/scaling_config.yaml'),
+        cfg.StrOpt('binary_model_path', default='/etc/minerwa/binary_filter_model.pkl'),
+        cfg.FloatOpt('binary_model_threshold', min=0, max=1, default=0.75),
+        cfg.StrOpt('class_model_path', default='/etc/minerwa/class_filter_model.pkl'),
+        cfg.FloatOpt('class_model_threshold', min=0, max=1, default=0.5),
+        cfg.StrOpt('vae_model_path', default='/etc/minerwa/vae_model'),
+        cfg.FloatOpt('vae_model_threshold', min=0, max=1, default=0.15),
+        cfg.StrOpt('torch_device', default='cpu')
     )
 
     @classmethod
-    def setup_config(cls, conf, conf_group_name: str = None):
+    def setup_config(cls, conf, conf_group_name: Optional[str] = None):
         conf.register_opts(cls.CFG_OPTS, conf_group_name)
 
     async def _choose_role(self):
@@ -147,6 +182,12 @@ class AIDetector(DetectorBase):
                     await self._setup_ingestor()
             await asyncio.sleep(30)
 
+    @singleton_run
+    async def _cache_timer(self):
+        self._cache_timeout = False
+        await asyncio.sleep(10)
+        self._cache_timeout = True
+
     async def _setup_processor(self):
         self._flow_cache = []
         q_in = Queue()
@@ -154,16 +195,19 @@ class AIDetector(DetectorBase):
         p = Process(target=self._analyze_flows, args=(q_in, q_out))
         ctx = zmq.Context()
         self._zmq_sock = ctx.socket(zmq.PULL)
-        self._zmq_sock.bind('ipc:///tmp/minerwa_ai.socket')
+        self._zmq_sock.bind('ipc:///var/run/minerwa_ai.socket')
         p.start()
         while self.role == 'processor':
-            self._flow_cache.append(self._zmq_sock.recv_pyobj())
-            if len(self._flow_cache) == 50:
-                q_in.put(self._flow_cache.copy())
-                print(q_in.qsize())
-                self._flow_cache = []
             try:
-                print(q_out.get_nowait())
+                self._flow_cache.append(self._zmq_sock.recv_pyobj(flags=zmq.NOBLOCK))
+            except zmq.ZMQError:
+                await asyncio.sleep(1)
+            if (cache_size := len(self._flow_cache)) == self.conf.flow_cache_size or (cache_size > 1 and self._cache_timeout):
+                q_in.put(self._flow_cache.copy())
+                self._flow_cache = []
+                asyncio.get_event_loop().create_task(self._cache_timer())
+            try:
+                print(q_out.get_nowait(), flush=True)
             except:
                 pass
         p.join()
@@ -171,7 +215,7 @@ class AIDetector(DetectorBase):
     async def _setup_ingestor(self):
         ctx = zmq.Context()
         self._zmq_sock = ctx.socket(zmq.PUSH)
-        self._zmq_sock.connect('ipc:///tmp/minerwa_ai.socket')
+        self._zmq_sock.connect('ipc:///var/run/minerwa_ai.socket')
         await super().run()
 
     async def _unset_ingestor(self):
@@ -181,7 +225,8 @@ class AIDetector(DetectorBase):
         asyncio.create_task(self._choose_role())
 
     def _cache_flow(self, flow: FlowBase):
-        self._zmq_sock.send_pyobj((flow.id, {
+        self._zmq_sock.send_pyobj({
+            'FLOW_ID': flow.id.hex,
             'IN_BYTES': flow.inBytes,
             'IN_PKTS': flow.inPkts,
             'PROTOCOL': flow.protocol,
@@ -243,7 +288,7 @@ class AIDetector(DetectorBase):
             'Label': '',
             'SRC_DENY': False,
             'DST_DENY': False,
-        }))
+        })
 
     def _analyze_flows(self, queue, result_queue):
         self._windower_settings = {
@@ -255,13 +300,15 @@ class AIDetector(DetectorBase):
             'win_max_cnt': self.conf.win_max_cnt
         }
 
-        with open('/etc/minerwa/scaling_config.yaml', 'r') as f:
+        with open(self.conf.scaling_config_path, 'r') as f:
             scaling_config = yaml.safe_load(f)
 
+        spark_temp = Path(self.conf.temp_dir) / 'spark'
+        spark_temp.mkdir(parents=True, exist_ok=True)
         spark = init_local_spark((
             ('spark.driver.memory', f'{self.conf.spark_memory}g'),
             ('spark.executor.memory', f'{self.conf.spark_memory}g'),
-            ('spark.local.dir', self.conf.spark_temp),
+            ('spark.local.dir', spark_temp),
             ('spark.sql.optimizer.maxIterations', 500),
         ))
         spark.conf.set('spark.sql.execution.arrow.pyspark.enabled',
@@ -271,18 +318,15 @@ class AIDetector(DetectorBase):
                                            outputCol='vfeatures')
 
         schema_struct = StructType()
+        schema = None
         for column in config.VNET_COLUMNS:
             schema = schema_struct.add(column.name,
                                        getattr(pyspark.sql.types, column.data_type)(),
                                        True)
 
-        columns_to_scale = [
-            column.name for column in config.VNET_COLUMNS
-            if column.should_scale
-        ]
-
         unischema = Unischema(
             'data_schema', [
+                UnischemaField('flow_id', str, (), ScalarCodec(StringType()), True),
                 UnischemaField('feature', np.float32, (1, len(FEATURE_NAMES)), CompressedNdarrayCodec(), False),
                 UnischemaField('label', str, (), ScalarCodec(StringType()), True),
                 UnischemaField('src_ip', str, (), ScalarCodec(StringType()), True),
@@ -290,17 +334,31 @@ class AIDetector(DetectorBase):
             ]
         )
 
-        with open('/etc/minerwa/filter_model.pkl', 'rb') as f:
-            filter_model = pickle.load(f)
+        binary_filter_model = None
+        with open(self.conf.binary_model_path, 'rb') as f:
+            binary_filter_model = pickle.load(f)
 
-        num_features = len([column for column in config.VNET_COLUMNS if column.column_type.startswith('feature_')])
+        class_filter_model = None
+        with open(self.conf.class_model_path, 'rb') as f:
+            class_filter_model = pickle.load(f)
 
-        vae_model = VAE.load_from_checkpoint(checkpoint_path='/etc/minerwa/vae_model', map_location=torch.device('cpu'), n_features=num_features)
+        num_features = len([column for column in config.VNET_COLUMNS
+                            if column.column_type.startswith('feature_')])
+
+        vae_model = VAE.load_from_checkpoint(
+                        checkpoint_path=self.conf.vae_model_path,
+                        map_location=torch.device(self.conf.torch_device),
+                        n_features=num_features)
         vae_model.eval()
+
+        if self.conf.parallel_jobs > 1:
+            process_flows_fn = functools.partial(process_flows_multiproc,
+                                                 worker_processes_num=self.conf.parallel_jobs)
+        else:
+            process_flows_fn = process_flows
 
         while True:
             flows = queue.get()
-            ids, flows = zip(*flows)
             data = {
                 col: [v[col] for v in flows]
                 for col in COLUMNS
@@ -308,17 +366,17 @@ class AIDetector(DetectorBase):
 
             df = pd.DataFrame(data)
             df = df.astype(FEATURES_CASTDICT)
-            win_stats, _ = process_flows(df, vnet_feature_extraction.extract_features,
-                                         self._windower_settings, self.conf.window_size, None, 10)
+
+            win_stats, _ = process_flows_fn(df, vnet_feature_extraction.extract_features,
+                                            self._windower_settings, self.conf.window_size)
             df = df.join(win_stats)
 
             df = vnet_preprocessing.preprocess(df)
             df = scaler.scale_features(df, scaling_config['scaling_config'])
             df = spark.createDataFrame(df, schema=schema)
             df = df.na.fill(0.0)
-            df = clip_data_to_0_1(df, columns_to_scale)
             df = vector_assembler.transform(df)
-            df = df.select('vfeatures', 'Label', 'IP_SRC', 'IP_DST')
+            df = df.select('FLOW_ID', 'vfeatures', 'Label', 'IP_SRC', 'IP_DST')
 
             rows_rdd = (
                 df
@@ -332,36 +390,62 @@ class AIDetector(DetectorBase):
                 unischema.as_spark_schema()
             )
 
-            data_folder = '/tmp/parquet_data'
-            with materialize_dataset(spark, get_uri(data_folder), unischema, row_group_size_mb=100):
+            parquet_dir = Path(self.conf.temp_dir) / 'parquet'
+            parquet_dir.mkdir(parents=True, exist_ok=True)
+            with materialize_dataset(spark, get_uri(parquet_dir), unischema, row_group_size_mb=100):
                 (
                     df
                     .write
                     .mode('overwrite')
-                    .parquet(get_uri(data_folder))
+                    .parquet(get_uri(parquet_dir))
                 )
 
             reader = make_reader(
-                get_uri(data_folder), reader_pool_type='process', workers_count=10, num_epochs=1
+                get_uri(parquet_dir), reader_pool_type='process', workers_count=1, num_epochs=1
             )
-            dataloader = DataLoader(reader, batch_size=300, shuffling_queue_capacity=0)
+            dataloader = DataLoader(reader, batch_size=300, shuffling_queue_capacity=4096)
 
             for data in dataloader:
-                x = data['feature']
-                recon_x, mu, logvar = vae_model(x)
+                data['feature'] = map(lambda x: x, np.squeeze(data['feature'].numpy()))
+                data = pd.DataFrame(data)
+
+                # binary classification-based filter model
+                data_x = np.stack(data['feature'].values)
+                pred = binary_filter_model.predict(data_x)
+                prob = binary_filter_model.predict_proba(data_x).max(axis=1)
+                data['pred'] = pred
+                data['prob'] = prob
+
+                threshold = self.conf.binary_model_threshold
+                bin_malign = data[(data['pred'] == 1) & (data['prob'] >= threshold)]
+                bin_benign = data[(data['pred'] == 0) | (data['prob'] < threshold)]
+
+                # multiclass classification-based filter model
+                if len(bin_malign):
+                    data_x = np.stack(bin_malign['feature'].values)
+                    pred = class_filter_model.predict(data_x)
+                    prob = class_filter_model.predict_proba(data_x).max(axis=1)
+                    bin_malign['pred'] = pred
+                    bin_malign['prob'] = prob
+
+                    threshold = self.conf._model_threshold
+                    class_malign = bin_malign[(bin_malign['pred'] != 'background')
+                                              and (bin_malign['prob'] >= threshold)]
+                    class_unknown = bin_malign[bin_malign['prob'] < threshold]
+                else:
+                    class_malign = pd.DataFrame(columns=data.columns)
+                    class_unknown = pd.DataFrame(columns=data.columns)
+
+                anomaly_candidates = pd.concat((bin_benign, class_unknown),
+                                               ignore_index=True)
+                # anomaly detection
+                data_x = np.stack(anomaly_candidates['feature'].values)
+                x = torch.tensor(data_x)
+                recon_x = vae_model(x)[0]
                 mse_loss = calc_recon_loss(recon_x, num_features, x, loss_type='mse')
-                # bce_loss = calc_recon_loss(recon_x, num_features, x, loss_type='bce')
-                # bce_kd_loss = calc_recon_loss(recon_x, num_features, x, logvar, mu, loss_type='bce+kd')
-                print(mse_loss, flush=True)
+                anomaly_candidates['mse_loss'] = mse_loss
 
-                data_x = np.squeeze(x.numpy())
-                pred = filter_model.predict(data_x)
-                prob = filter_model.predict_proba(data_x).max(axis=1)
-                print(pred, prob, flush=True)
-                print('---', flush=True)
-
+                print(anomaly_candidates, flush=True)
 
     async def process_flow(self, flow: FlowBase):
         self._cache_flow(flow)
-
-
