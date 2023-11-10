@@ -7,7 +7,7 @@ import math
 import pandas as pd
 from typing import Optional
 
-from windower import Windower
+from .windower import Windower
 
 
 # Set of functions for timestamps conversion

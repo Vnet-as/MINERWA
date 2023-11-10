@@ -11,11 +11,11 @@ import numpy.lib.recfunctions as rfn
 import pandas as pd
 from scipy.stats import entropy
 
-import traffic_stats as tstats
-import streaming_stats as sstats
-from flow_features import FlowFeatures
-from flowlist import FlowList
-from sampling import ReservoirSampler
+from . import traffic_stats as tstats
+from . import streaming_stats as sstats
+from .flow_features import FlowFeatures
+from .flowlist import FlowList
+from .sampling import ReservoirSampler
 
 
 # Dictionary mapper to translate protocols into assigned IDs

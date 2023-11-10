@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from typing import Optional
 
-from windower import Windower
+from .windower import Windower
 
 
 def process_func(windower_instance: Optional[Windower],
