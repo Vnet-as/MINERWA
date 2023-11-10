@@ -9,13 +9,16 @@ services:
     depends_on:
       - nats
       - nprobe
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   detector:
     build: .
     volumes:
       - ./minerwa:/tmp/minerwa/minerwa:ro
       - ./config.conf:/etc/minerwa/minerwa.conf:ro
       - ./scaling_config.yaml:/etc/minerwa/scaling_config.yaml:ro
-      - ./sc3_bigsubset.attacks_binary-balanced.model.pkl:/etc/minerwa/filter_model.pkl:ro
+      - ./sc3_bigsubset.attacks_binary-balanced.model.pkl:/etc/minerwa/binary_filter_model.pkl:ro
+      - ./sc3_august.attacks_multi-balanced.model.pkl:/etc/minerwa/class_filter_model.pkl:ro
       - ./final_model:/etc/minerwa/vae_model:ro
     command: detector
     depends_on:
@@ -38,6 +41,10 @@ services:
       - ./schema.capnp:/var/lib/clickhouse/format_schemas/schema.capnp
     depends_on:
       - nats
+  grafana:
+    image: grafana/grafana:10.2.0
+    ports:
+      - "3000:3000"
 
 networks:
   default:
