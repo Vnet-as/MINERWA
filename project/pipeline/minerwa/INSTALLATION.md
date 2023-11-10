@@ -13,7 +13,7 @@ network interface on which the traffic will be monitored. Unless `wlan0` is
 available on you computer, you should configure one of the available interfaces.
 To get the list of available network interfaces on you system, you can use
 for examples command `ip link`.
-
+  * [ ] 
 Running docker-compose:
 
 ```
@@ -67,6 +67,15 @@ via ZeroMQ (nProbe is listening for connection and broadcasts all flows to all c
 subscribers, so there is no way of load-balancing or horizontal scaling usin multiple
 subscribers).
 
+### NATS
+
+The are no special requirements for running NATS server.
+
+JetStream feature is currently not used, so just running `./nats-server` binary
+distribution executable is enough. By default, it runs on port *4222*.
+Optionally `-m 8222` option can be used to open monitoring interface used
+by *nats-top* utility.
+
 ### IPFIX fields definition
 Homogenous and predictable data are always better for handling and performance.
 Therefore we rely on using fixed (though user-definable) list of IPFIX fields.
@@ -112,6 +121,10 @@ This schema could be easily generated from flow definition file using command:
 $ docker compose run ingestor gen_capnproto --schema-output -
 ```
 
-As with ClickHouse DDL, this could be used wherever needed, but also must stored
-in file along other configuration files (and path to file properly configured
-in config file - section `DEFAULT`, option `capnp_schema`)
+This schema could be used wherever needed (every service that inspects internal flows
+serialized using Cap'n Proto), therefore must be also stored in file along other
+configuration files (and path to file properly configured in config file
+- section `DEFAULT`, option `capnp_schema`).
+To be used by ClickHouse, schema file should by placed to ClickHouse schema
+directory (default `/var/lib/clickhouse/format_schemas`) and filename correctly
+configured in DDL before applying.

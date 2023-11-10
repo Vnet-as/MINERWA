@@ -14,7 +14,7 @@ RUN apt update -y && \
 
 RUN pip install poetry
 
-COPY ./nanodec_requirements.txt /tmp
+COPY ./nanodec_requirements.txt /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt
 
 COPY vendor /tmp/vendor
