@@ -1,0 +1,607 @@
+{
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "panel",
+      "id": "barchart",
+      "name": "Bar chart",
+      "version": ""
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.2.0"
+    },
+    {
+      "type": "datasource",
+      "id": "grafana-clickhouse-datasource",
+      "name": "ClickHouse",
+      "version": "3.3.0"
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "default-clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "scheme",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 3,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "hidden",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "builderOptions": {
+            "database": "default",
+            "fields": [],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "dtc",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "restrictToFields": [
+                  {
+                    "label": "dtc",
+                    "name": "dtc",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  }
+                ],
+                "type": "datetime"
+              }
+            ],
+            "groupBy": [
+              "toMinute(dtc)"
+            ],
+            "limit": 100,
+            "metrics": [
+              {
+                "aggregation": "count",
+                "field": "id"
+              }
+            ],
+            "mode": "trend",
+            "orderBy": [],
+            "table": "minerwa_flows",
+            "timeField": "dtc",
+            "timeFieldType": "DateTime"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "default-clickhouse"
+          },
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "database": "default",
+              "fields": [],
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "dtc",
+                  "operator": "WITH IN DASHBOARD TIME RANGE",
+                  "restrictToFields": [
+                    {
+                      "label": "dtc",
+                      "name": "dtc",
+                      "picklistValues": [],
+                      "type": "DateTime"
+                    }
+                  ],
+                  "type": "datetime"
+                }
+              ],
+              "groupBy": [
+                "toMinute(dtc)"
+              ],
+              "limit": 100,
+              "metrics": [
+                {
+                  "aggregation": "count",
+                  "field": "id"
+                }
+              ],
+              "mode": "trend",
+              "orderBy": [],
+              "table": "minerwa_flows",
+              "timeField": "dtc",
+              "timeFieldType": "DateTime"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT toStartOfMinute(dtc) as time, count(id)/60 as \"Flows per second\" FROM \"default\".\"minerwa_flows\" \nWHERE \n  $__timeFilter(dtc) \n  AND   ( dtc  >= $__fromTime AND dtc <= $__toTime ) \n  AND if('${sa}'!= '', ipv4SrcAddr == coalesce(nullIf('${sa}', ''), '0.0.0.0'), ''=='')\n  AND if('${da}'!= '', ipv4SrcAddr == coalesce(nullIf('${da}', ''), '0.0.0.0'), ''=='')  \nGROUP BY time ORDER BY time ASC LIMIT 100",
+          "refId": "A",
+          "selectedFormat": 0
+        }
+      ],
+      "title": "Ingested flows per second",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "default-clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "shades"
+          },
+          "custom": {
+            "axisBorderShow": true,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 65,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 0,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "pps"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UDP pkts/sec"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TCP pkts/sec"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 2,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.9,
+        "fullHighlight": true,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [
+            "max",
+            "min",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "orientation": "vertical",
+        "showValue": "never",
+        "stacking": "normal",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 200
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "default-clickhouse"
+          },
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "limit": 100,
+              "mode": "list"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT toStartOfMinute($__timeInterval(flowEndMilliseconds/1000)) as time, protocol::text, sum(inPkts)/60 as \"avg pkts/sec\" \nFROM \"default\".\"minerwa_flows\" \nWHERE \n  $__timeFilter_ms(flowEndMilliseconds) \n  AND ( flowEndMilliseconds/1000  >= $__fromTime AND flowEndMilliseconds/1000 <= $__toTime )\n  AND if('${sa}'!= '', ipv4SrcAddr == coalesce(nullIf('${sa}', ''), '0.0.0.0'), ''=='')\n  AND if('${da}'!= '', ipv4SrcAddr == coalesce(nullIf('${da}', ''), '0.0.0.0'), ''=='')\nGROUP BY time, protocol\nORDER BY time ASC;",
+          "refId": "TCP",
+          "selectedFormat": 0
+        }
+      ],
+      "title": "Ingested packets per second (average per min)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "time": false
+            },
+            "indexByName": {
+              "avg pkts/sec 1": 3,
+              "avg pkts/sec 103": 4,
+              "avg pkts/sec 115": 5,
+              "avg pkts/sec 17": 2,
+              "avg pkts/sec 4": 6,
+              "avg pkts/sec 41": 13,
+              "avg pkts/sec 44": 7,
+              "avg pkts/sec 47": 8,
+              "avg pkts/sec 5": 9,
+              "avg pkts/sec 50": 10,
+              "avg pkts/sec 58": 11,
+              "avg pkts/sec 6": 1,
+              "avg pkts/sec 89": 12,
+              "time": 0
+            },
+            "renameByName": {
+              "avg pkts/sec 1": "ICMP pkts/sec",
+              "avg pkts/sec 103": "PIM pkts/sec",
+              "avg pkts/sec 115": "L2TP pkts/sec",
+              "avg pkts/sec 17": "UDP pkts/sec",
+              "avg pkts/sec 4": "IP-in-IP pkts/sec",
+              "avg pkts/sec 44": "IPv6-Frag pkts/sec",
+              "avg pkts/sec 47": "GRE pkts/sec",
+              "avg pkts/sec 5": "ST pkts/sec",
+              "avg pkts/sec 50": "ESP pkts/sec",
+              "avg pkts/sec 58": "IPv6-ICMP pkts/sec",
+              "avg pkts/sec 6": "TCP pkts/sec",
+              "avg pkts/sec 89": "OSPF pkts/sec"
+            }
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "default-clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": true,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "binBps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "default-clickhouse"
+          },
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "limit": 100,
+              "mode": "list"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT toStartOfMinute(dtc) as time, sum(inBytes/60) as \"avg B/sec\" FROM \"default\".\"minerwa_flows\" \nWHERE \n  $__timeFilter(dtc) \n  AND ( dtc  >= $__fromTime AND dtc <= $__toTime )\n  AND protocol = 6\n  AND if('${sa}'!= '', ipv4SrcAddr == coalesce(nullIf('${sa}', ''), '0.0.0.0'), ''=='')\n  AND if('${da}'!= '', ipv4SrcAddr == coalesce(nullIf('${da}', ''), '0.0.0.0'), ''=='')\nGROUP BY time ",
+          "refId": "TCP",
+          "selectedFormat": 4
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "default-clickhouse"
+          },
+          "format": 0,
+          "hide": false,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "limit": 100,
+              "mode": "list"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT toStartOfMinute(dtc) as time, sum(inBytes)/60 as \"avg B/sec\" FROM \"default\".\"minerwa_flows\" \nWHERE \n  $__timeFilter(dtc) \n  AND ( dtc  >= $__fromTime AND dtc <= $__toTime ) \n  AND protocol = 17\n  AND if('${sa}'!= '', ipv4SrcAddr == coalesce(nullIf('${sa}', ''), '0.0.0.0'), ''=='')\n  AND if('${da}'!= '', ipv4SrcAddr == coalesce(nullIf('${da}', ''), '0.0.0.0'), ''=='')\nGROUP BY time ",
+          "refId": "UDP",
+          "selectedFormat": 4
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "default-clickhouse"
+          },
+          "format": 1,
+          "hide": false,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "limit": 100,
+              "mode": "list"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT toStartOfMinute(dtc) as time, sum(inBytes/60) as \"avg B/sec\" FROM \"default\".\"minerwa_flows\" \nWHERE \n  $__timeFilter(dtc) \n  AND ( dtc  >= $__fromTime AND dtc <= $__toTime )\n  AND protocol != 6\n  AND protocol != 17\n  AND if('${sa}'!= '', ipv4SrcAddr == coalesce(nullIf('${sa}', ''), '0.0.0.0'), ''=='')\n  AND if('${da}'!= '', ipv4SrcAddr == coalesce(nullIf('${da}', ''), '0.0.0.0'), ''=='')\nGROUP BY time ",
+          "refId": "OTHER",
+          "selectedFormat": 4
+        }
+      ],
+      "title": "Ingested data volume per minute (average per min)",
+      "transparent": true,
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "description": "source IP address",
+        "hide": 0,
+        "name": "sa",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "description": "source IP address",
+        "hide": 0,
+        "name": "da",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Overview",
+  "uid": "b51a145c-9555-4403-b5c3-462c0bd613ab",
+  "version": 23,
+  "weekStart": ""
+}

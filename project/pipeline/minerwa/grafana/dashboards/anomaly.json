@@ -1,0 +1,1163 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_CLICKHOUSE",
+      "label": "ClickHouse",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "grafana-clickhouse-datasource",
+      "pluginName": "ClickHouse"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "panel",
+      "id": "bargauge",
+      "name": "Bar gauge",
+      "version": ""
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.2.0"
+    },
+    {
+      "type": "datasource",
+      "id": "grafana-clickhouse-datasource",
+      "name": "ClickHouse",
+      "version": "3.3.0"
+    },
+    {
+      "type": "panel",
+      "id": "piechart",
+      "name": "Pie chart",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "dark-red",
+            "mode": "fixed"
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "/^count\\(flow_id\\)$/",
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "builderOptions": {
+            "database": "default",
+            "fields": [],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "event_time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "restrictToFields": [
+                  {
+                    "label": "event_time",
+                    "name": "event_time",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  }
+                ],
+                "type": "datetime"
+              }
+            ],
+            "groupBy": [],
+            "limit": 100,
+            "metrics": [
+              {
+                "aggregation": "count",
+                "field": "flow_id"
+              }
+            ],
+            "mode": "aggregate",
+            "orderBy": [],
+            "table": "minerwa_detections",
+            "timeField": "event_time",
+            "timeFieldType": "DateTime"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "builder",
+          "rawSql": "SELECT count(flow_id) FROM \"default\".\"minerwa_detections\" WHERE   ( event_time  >= $__fromTime AND event_time <= $__toTime ) LIMIT 100",
+          "refId": "A"
+        }
+      ],
+      "title": "Current anomaly flows",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "dark-red",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Malicious flows",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 22,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 4,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "builderOptions": {
+            "database": "default",
+            "fields": [
+              "flow_id"
+            ],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "event_time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "restrictToFields": [
+                  {
+                    "label": "event_time",
+                    "name": "event_time",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  }
+                ],
+                "type": "datetime"
+              }
+            ],
+            "limit": 100,
+            "metrics": [
+              {
+                "aggregation": "count",
+                "alias": "malicious flows",
+                "field": "flow_id"
+              }
+            ],
+            "mode": "trend",
+            "orderBy": [],
+            "table": "minerwa_detections",
+            "timeField": "event_time",
+            "timeFieldType": "DateTime"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "builder",
+          "rawSql": "SELECT $__timeInterval(event_time) as time,  count(flow_id) malicious_flows FROM \"default\".\"minerwa_detections\" WHERE $__timeFilter(event_time) AND   ( event_time  >= $__fromTime AND event_time <= $__toTime ) GROUP BY time ORDER BY time ASC LIMIT 100",
+          "refId": "A"
+        }
+      ],
+      "title": "Detected anomalies",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-YlRd"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 8,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^count\\(id\\)$/",
+          "values": true
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "builderOptions": {
+            "0": "T",
+            "1": "h",
+            "2": "e",
+            "3": " ",
+            "4": "q",
+            "5": "u",
+            "6": "e",
+            "7": "r",
+            "8": "y",
+            "9": " ",
+            "10": "h",
+            "11": "a",
+            "12": "s",
+            "13": " ",
+            "14": "t",
+            "15": "o",
+            "16": "o",
+            "17": " ",
+            "18": "m",
+            "19": "a",
+            "20": "n",
+            "21": "y",
+            "22": " ",
+            "23": "'",
+            "24": "F",
+            "25": "R",
+            "26": "O",
+            "27": "M",
+            "28": "'",
+            "29": " ",
+            "30": "c",
+            "31": "l",
+            "32": "a",
+            "33": "u",
+            "34": "s",
+            "35": "e",
+            "36": "s",
+            "37": ".",
+            "database": "default",
+            "fields": [
+              "ipv4SrcAddr"
+            ],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "event_time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "restrictToFields": [
+                  {
+                    "label": "event_time",
+                    "name": "event_time",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  }
+                ],
+                "type": "datetime"
+              }
+            ],
+            "groupBy": [
+              "ipv4SrcAddr"
+            ],
+            "limit": 100,
+            "metrics": [
+              {
+                "aggregation": "count",
+                "field": "id"
+              }
+            ],
+            "mode": "aggregate",
+            "orderBy": [
+              {
+                "dir": "DESC",
+                "name": "count(id)"
+              }
+            ],
+            "table": "minerwa_detections_mv"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "0": "T",
+              "1": "h",
+              "2": "e",
+              "3": " ",
+              "4": "q",
+              "5": "u",
+              "6": "e",
+              "7": "r",
+              "8": "y",
+              "9": " ",
+              "10": "i",
+              "11": "s",
+              "12": " ",
+              "13": "n",
+              "14": "o",
+              "15": "t",
+              "16": " ",
+              "17": "a",
+              "18": " ",
+              "19": "s",
+              "20": "e",
+              "21": "l",
+              "22": "e",
+              "23": "c",
+              "24": "t",
+              "25": " ",
+              "26": "s",
+              "27": "t",
+              "28": "a",
+              "29": "t",
+              "30": "e",
+              "31": "m",
+              "32": "e",
+              "33": "n",
+              "34": "t",
+              "35": ".",
+              "database": "default",
+              "fields": [
+                "flow_id"
+              ],
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "event_time",
+                  "operator": "WITH IN DASHBOARD TIME RANGE",
+                  "restrictToFields": [
+                    {
+                      "label": "event_time",
+                      "name": "event_time",
+                      "picklistValues": [],
+                      "type": "DateTime"
+                    }
+                  ],
+                  "type": "datetime"
+                }
+              ],
+              "limit": 100,
+              "mode": "list",
+              "orderBy": [],
+              "table": "minerwa_detections"
+            }
+          },
+          "queryType": "builder",
+          "rawSql": "SELECT ipv4SrcAddr, count(id) FROM \"default\".\"minerwa_detections_mv\" WHERE   ( event_time  >= $__fromTime AND event_time <= $__toTime ) GROUP BY ipv4SrcAddr ORDER BY count(id) DESC LIMIT 100",
+          "refId": "A",
+          "selectedFormat": 1
+        }
+      ],
+      "title": "Top anomaly sources",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic-by-name"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 0,
+        "y": 6
+      },
+      "id": 5,
+      "options": {
+        "displayLabels": [
+          "name",
+          "value"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^count\\(flow_id\\)$/",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "builderOptions": {
+            "database": "default",
+            "fields": [],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "event_time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "restrictToFields": [
+                  {
+                    "label": "event_time",
+                    "name": "event_time",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  }
+                ],
+                "type": "datetime"
+              }
+            ],
+            "groupBy": [
+              "event_name"
+            ],
+            "limit": 100,
+            "metrics": [
+              {
+                "aggregation": "count",
+                "field": "flow_id"
+              }
+            ],
+            "mode": "aggregate",
+            "orderBy": [],
+            "table": "minerwa_detections"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "builder",
+          "rawSql": "SELECT event_name, count(flow_id) FROM \"default\".\"minerwa_detections\" WHERE   ( event_time  >= $__fromTime AND event_time <= $__toTime ) GROUP BY event_name LIMIT 100",
+          "refId": "A"
+        }
+      ],
+      "title": "Anomaly by type",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic-by-name"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 4,
+        "y": 6
+      },
+      "id": 6,
+      "options": {
+        "displayLabels": [
+          "name",
+          "value"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^count\\(flow_id\\)$/",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "builderOptions": {
+            "database": "default",
+            "fields": [],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "event_time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "restrictToFields": [
+                  {
+                    "label": "event_time",
+                    "name": "event_time",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  }
+                ],
+                "type": "datetime"
+              }
+            ],
+            "groupBy": [
+              "detector"
+            ],
+            "limit": 100,
+            "metrics": [
+              {
+                "aggregation": "count",
+                "field": "flow_id"
+              }
+            ],
+            "mode": "aggregate",
+            "orderBy": [],
+            "table": "minerwa_detections"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "builder",
+          "rawSql": "SELECT detector, count(flow_id) FROM \"default\".\"minerwa_detections\" WHERE   ( event_time  >= $__fromTime AND event_time <= $__toTime ) GROUP BY detector LIMIT 100",
+          "refId": "A"
+        }
+      ],
+      "title": "Anomalies by detector",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "fieldMinMax": false,
+          "mappings": [
+            {
+              "options": {
+                "6": {
+                  "index": 0,
+                  "text": "TCP"
+                },
+                "17": {
+                  "index": 1,
+                  "text": "UDP"
+                }
+              },
+              "type": "value"
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 8,
+        "y": 6
+      },
+      "id": 7,
+      "options": {
+        "displayLabels": [
+          "name",
+          "value"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false,
+          "values": []
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^count\\(protocol\\)$/",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "builderOptions": {
+            "0": "T",
+            "1": "h",
+            "2": "e",
+            "3": " ",
+            "4": "q",
+            "5": "u",
+            "6": "e",
+            "7": "r",
+            "8": "y",
+            "9": " ",
+            "10": "h",
+            "11": "a",
+            "12": "s",
+            "13": " ",
+            "14": "t",
+            "15": "o",
+            "16": "o",
+            "17": " ",
+            "18": "m",
+            "19": "a",
+            "20": "n",
+            "21": "y",
+            "22": " ",
+            "23": "'",
+            "24": "F",
+            "25": "R",
+            "26": "O",
+            "27": "M",
+            "28": "'",
+            "29": " ",
+            "30": "c",
+            "31": "l",
+            "32": "a",
+            "33": "u",
+            "34": "s",
+            "35": "e",
+            "36": "s",
+            "37": ".",
+            "database": "default",
+            "fields": [
+              "protocol"
+            ],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "event_time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "restrictToFields": [
+                  {
+                    "label": "event_time",
+                    "name": "event_time",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  }
+                ],
+                "type": "datetime"
+              }
+            ],
+            "groupBy": [
+              "protocol"
+            ],
+            "limit": 100,
+            "metrics": [
+              {
+                "aggregation": "count",
+                "field": "protocol"
+              }
+            ],
+            "mode": "aggregate",
+            "orderBy": [],
+            "table": "minerwa_detections_mv"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "0": "T",
+              "1": "h",
+              "2": "e",
+              "3": " ",
+              "4": "q",
+              "5": "u",
+              "6": "e",
+              "7": "r",
+              "8": "y",
+              "9": " ",
+              "10": "h",
+              "11": "a",
+              "12": "s",
+              "13": " ",
+              "14": "t",
+              "15": "o",
+              "16": "o",
+              "17": " ",
+              "18": "m",
+              "19": "a",
+              "20": "n",
+              "21": "y",
+              "22": " ",
+              "23": "'",
+              "24": "F",
+              "25": "R",
+              "26": "O",
+              "27": "M",
+              "28": "'",
+              "29": " ",
+              "30": "c",
+              "31": "l",
+              "32": "a",
+              "33": "u",
+              "34": "s",
+              "35": "e",
+              "36": "s",
+              "37": ".",
+              "database": "default",
+              "fields": [
+                "protocol"
+              ],
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "event_time",
+                  "operator": "WITH IN DASHBOARD TIME RANGE",
+                  "restrictToFields": [
+                    {
+                      "label": "event_time",
+                      "name": "event_time",
+                      "picklistValues": [],
+                      "type": "DateTime"
+                    }
+                  ],
+                  "type": "datetime"
+                }
+              ],
+              "groupBy": [
+                "protocol"
+              ],
+              "limit": 100,
+              "metrics": [
+                {
+                  "aggregation": "count",
+                  "field": "protocol"
+                }
+              ],
+              "mode": "aggregate",
+              "orderBy": [],
+              "table": "minerwa_detections_mv"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT protocol::text, count(protocol) FROM \"default\".\"minerwa_detections_mv\" WHERE   ( event_time  >= $__fromTime AND event_time <= $__toTime ) GROUP BY protocol LIMIT 100",
+          "refId": "A",
+          "selectedFormat": 1
+        }
+      ],
+      "title": "Top protocols used",
+      "transformations": [],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-YlRd"
+          },
+          "displayName": "${__field.labels}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "id": 9,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^count\\(id\\)$/",
+          "values": true
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "builderOptions": {
+            "0": "T",
+            "1": "h",
+            "2": "e",
+            "3": " ",
+            "4": "q",
+            "5": "u",
+            "6": "e",
+            "7": "r",
+            "8": "y",
+            "9": " ",
+            "10": "h",
+            "11": "a",
+            "12": "s",
+            "13": " ",
+            "14": "t",
+            "15": "o",
+            "16": "o",
+            "17": " ",
+            "18": "m",
+            "19": "a",
+            "20": "n",
+            "21": "y",
+            "22": " ",
+            "23": "'",
+            "24": "F",
+            "25": "R",
+            "26": "O",
+            "27": "M",
+            "28": "'",
+            "29": " ",
+            "30": "c",
+            "31": "l",
+            "32": "a",
+            "33": "u",
+            "34": "s",
+            "35": "e",
+            "36": "s",
+            "37": ".",
+            "database": "default",
+            "fields": [
+              "ipv4DstAddr"
+            ],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "event_time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "restrictToFields": [
+                  {
+                    "label": "event_time",
+                    "name": "event_time",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  }
+                ],
+                "type": "datetime"
+              }
+            ],
+            "groupBy": [
+              "ipv4DstAddr"
+            ],
+            "limit": 100,
+            "metrics": [
+              {
+                "aggregation": "count",
+                "field": "id"
+              }
+            ],
+            "mode": "aggregate",
+            "orderBy": [
+              {
+                "dir": "DESC",
+                "name": "count(id)"
+              }
+            ],
+            "table": "minerwa_detections_mv"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "0": "T",
+              "1": "h",
+              "2": "e",
+              "3": " ",
+              "4": "q",
+              "5": "u",
+              "6": "e",
+              "7": "r",
+              "8": "y",
+              "9": " ",
+              "10": "i",
+              "11": "s",
+              "12": " ",
+              "13": "n",
+              "14": "o",
+              "15": "t",
+              "16": " ",
+              "17": "a",
+              "18": " ",
+              "19": "s",
+              "20": "e",
+              "21": "l",
+              "22": "e",
+              "23": "c",
+              "24": "t",
+              "25": " ",
+              "26": "s",
+              "27": "t",
+              "28": "a",
+              "29": "t",
+              "30": "e",
+              "31": "m",
+              "32": "e",
+              "33": "n",
+              "34": "t",
+              "35": ".",
+              "database": "default",
+              "fields": [
+                "flow_id"
+              ],
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "event_time",
+                  "operator": "WITH IN DASHBOARD TIME RANGE",
+                  "restrictToFields": [
+                    {
+                      "label": "event_time",
+                      "name": "event_time",
+                      "picklistValues": [],
+                      "type": "DateTime"
+                    }
+                  ],
+                  "type": "datetime"
+                }
+              ],
+              "limit": 100,
+              "mode": "list",
+              "orderBy": [],
+              "table": "minerwa_detections"
+            }
+          },
+          "queryType": "builder",
+          "rawSql": "SELECT ipv4DstAddr, count(id) FROM \"default\".\"minerwa_detections_mv\" WHERE   ( event_time  >= $__fromTime AND event_time <= $__toTime ) GROUP BY ipv4DstAddr ORDER BY count(id) DESC LIMIT 100",
+          "refId": "A",
+          "selectedFormat": 1
+        }
+      ],
+      "title": "Top anomaly sources",
+      "type": "bargauge"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 38,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "2023-11-10T16:24:30.000Z",
+    "to": "2023-11-10T16:26:00.000Z"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Anomaly detection",
+  "uid": "b9024a5a-8815-4641-a5ea-937942b8b4d6",
+  "version": 10,
+  "weekStart": ""
+}
