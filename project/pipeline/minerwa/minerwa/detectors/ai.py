@@ -3,6 +3,7 @@ import functools
 from multiprocessing import Process, Queue
 from pathlib import Path
 import pickle
+import queue
 from typing import Optional
 
 import filelock
@@ -178,6 +179,8 @@ class AIDetector(DetectorBase):
                         await self._setup_processor()
             except filelock._error.Timeout:
                 if self.role != 'ingestor':
+                    if self.role == 'processor':
+                        await self._unset_processor()
                     self.role = 'ingestor'
                     await self._setup_ingestor()
             await asyncio.sleep(30)
@@ -189,6 +192,7 @@ class AIDetector(DetectorBase):
         self._cache_timeout = True
 
     async def _setup_processor(self):
+        self._broker = await self._setup_broker()
         self._flow_cache = []
         q_in = Queue()
         q_out = Queue()
@@ -207,8 +211,9 @@ class AIDetector(DetectorBase):
                 self._flow_cache = []
                 asyncio.get_event_loop().create_task(self._cache_timer())
             try:
-                print(q_out.get_nowait(), flush=True)
-            except:
+                res = q_out.get_nowait()
+                await self._save_result(res['flow_id'], res['type'], res['coef'])
+            except queue.Empty:
                 pass
         p.join()
 
@@ -219,6 +224,9 @@ class AIDetector(DetectorBase):
         await super().run()
 
     async def _unset_ingestor(self):
+        await self._broker.drain()
+
+    async def _unset_processor(self):
         await self._broker.drain()
 
     async def run(self):
@@ -445,7 +453,19 @@ class AIDetector(DetectorBase):
                 mse_loss = calc_recon_loss(recon_x, num_features, x, loss_type='mse')
                 anomaly_candidates['mse_loss'] = mse_loss
 
-                print(anomaly_candidates, flush=True)
+                for _, flow in class_malign.iterrows():
+                    result_queue.put({
+                        'flow_id': flow['flow_id'],
+                        'type': flow['pred'],
+                        'coef': flow['prob']
+                    })
+
+                for _, flow in anomaly_candidates[anomaly_candidates['mse_loss'] >= self.conf.vae_model_threshold].iterrows():
+                    result_queue.put({
+                        'flow_id': flow['flow_id'],
+                        'type': 'anomaly',
+                        'coef': flow['mse_loss']
+                    })
 
     async def process_flow(self, flow: FlowBase):
         self._cache_flow(flow)

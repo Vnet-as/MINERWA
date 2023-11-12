@@ -1,6 +1,5 @@
-
 CREATE TABLE IF NOT EXISTS minerwa_ingestion (
-    id UUID,
+    id String,
     inBytes UInt32,
     inPkts UInt32,
     protocol UInt8,
@@ -66,14 +65,13 @@ CREATE TABLE IF NOT EXISTS minerwa_ingestion (
     dstToSrcIatStddev UInt32,
     applicationId UInt32
 ) ENGINE = NATS SETTINGS
-    nats_url = 'nats:4222',
+    nats_url = 'nats://nats:4222',
     nats_subjects = 'minerwa.ingestion',
     nats_format = 'CapnProto',
     nats_schema = 'schema.capnp:Flow';
 
 
 CREATE TABLE IF NOT EXISTS minerwa_flows (
-
     id UUID,
     inBytes UInt32,
     inPkts UInt32,
@@ -145,3 +143,51 @@ CREATE TABLE IF NOT EXISTS minerwa_flows (
   TTL dtc + INTERVAL 1 HOUR;
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS minerwa_flows_mv TO minerwa_flows AS SELECT * FROM minerwa_ingestion;
+
+SET allow_experimental_object_type=1;
+
+CREATE TABLE IF NOT EXISTS minerwa_detections_nats (
+    flow_id UUID NOT NULL,
+    detector String NOT NULL,
+    event_name String NOT NULL,
+    metric Float32,
+) ENGINE = NATS SETTINGS
+    nats_url = 'nats://nats:4222',
+    nats_subjects = 'minerwa.detection',
+    nats_format = 'JSONEachRow';
+
+CREATE TABLE IF NOT EXISTS minerwa_detections (
+    flow_id UUID NOT NULL,
+    detector String NOT NULL,
+    event_name String NOT NULL,
+    metric Float32,
+    event_time DateTime NOT NULL DEFAULT now())
+ENGINE = MergeTree()
+ORDER BY flow_id;
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS minerwa_detections_nats_mv TO minerwa_detections AS SELECT * FROM minerwa_detections_nats;
+
+CREATE TABLE IF NOT EXISTS minerwa_detections_flows (
+    flow_id UUID NOT NULL,
+    ipv4SrcAddr IPv4,
+    ipv4DstAddr IPv4,
+    protocol UInt8,
+    event_name String NOT NULL,
+    detector String NOT NULL,
+    metric Float32,
+    event_time DateTime NOT NULL DEFAULT now())
+ENGINE = MergeTree
+ORDER BY flow_id;
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS minerwa_detections_mv TO minerwa_detections_flows
+AS SELECT
+    minerwa_flows.id as flow_id,
+    minerwa_flows.ipv4SrcAddr,
+    minerwa_flows.ipv4DstAddr,
+    minerwa_flows.protocol,
+    minerwa_detections.event_name,
+    minerwa_detections.detector,
+    minerwa_detections.metric,
+    minerwa_detections.event_time as event_time
+FROM minerwa_detections
+JOIN minerwa_flows ON minerwa_flows.id = minerwa_detections.flow_id;

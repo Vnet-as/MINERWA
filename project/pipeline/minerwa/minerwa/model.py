@@ -26,7 +26,7 @@ class FlowBase:
 
     def to_capnproto(self, cnp):
         map_ = {
-            UUID: lambda v: v.bytes,
+            UUID: lambda v: v.hex,
             datetime: lambda v: v.timestamp(),
             IPv4Address: int,
             IPv6Address: lambda v: v.packed
@@ -47,7 +47,7 @@ class FlowBase:
     @classmethod
     def from_capnproto(cls, cnp) -> Self:
         map_ = {
-            UUID: lambda v: UUID(bytes=v),
+            UUID: lambda v: UUID(hex=v.decode()),
             datetime: datetime.fromtimestamp,
             IPv4Address: IPv4Address,
             IPv6Address: lambda v: IPv6Address(v),
@@ -59,8 +59,8 @@ class FlowBase:
                                  lambda v: v)(getattr(cnp, f.name))
                 for f in fields(cls)
                 if getattr(cnp, f.name)})
-        except AttributeError:
-            print(cnp)
+        except AttributeError as e:
+            logging.error('Error: %s, data: %s', e, cnp)
 
     @classmethod
     @cache
